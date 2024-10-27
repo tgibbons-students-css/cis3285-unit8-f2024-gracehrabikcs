@@ -31,7 +31,93 @@ namespace SingleResponsibilityPrinciple.Tests
             }
         }
 
-        [TestMethod()]
+
+
+        [TestMethod]
+        public void ProcessTrades_WithSingleValidTrade_AddsOneRecord()
+        {
+            // Arrange
+            var tradeStream = CreateStreamFromText("GBPUSD,1000,1.51");
+            var tradeProcessor = new TradeProcessor();
+
+            // Act
+            int countBefore = CountDbRecords();
+            tradeProcessor.ProcessTrades(tradeStream);
+            int countAfter = CountDbRecords();
+
+            // Assert
+            Assert.AreEqual(countBefore + 1, countAfter);
+        }
+
+        [TestMethod]
+        public void ProcessTrades_WithMultipleValidTrades_AddsCorrectRecords()
+        {
+            var tradeStream = CreateStreamFromText("GBPUSD,1000,1.51\nEURUSD,2000,1.25");
+            var tradeProcessor = new TradeProcessor();
+
+            int countBefore = CountDbRecords();
+            tradeProcessor.ProcessTrades(tradeStream);
+            int countAfter = CountDbRecords();
+
+            Assert.AreEqual(countBefore + 2, countAfter);
+        }
+
+        [TestMethod]
+        public void ProcessTrades_WithEmptyFile_AddsNoRecords()
+        {
+            var tradeStream = CreateStreamFromText("");
+            var tradeProcessor = new TradeProcessor();
+
+            int countBefore = CountDbRecords();
+            tradeProcessor.ProcessTrades(tradeStream);
+            int countAfter = CountDbRecords();
+
+            Assert.AreEqual(countBefore, countAfter);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FileNotFoundException))]
+        public void ProcessTrades_WithNonExistentFile_ThrowsException()
+        {
+            // Simulate a non-existent file stream.
+            using (var stream = new FileStream("nonexistent.txt", FileMode.Open))
+            {
+                var tradeProcessor = new TradeProcessor();
+                tradeProcessor.ProcessTrades(stream);
+            }
+        }
+
+        [TestMethod]
+        public void ReadTradeData_WithMalformedTrade_ReturnsNoLines()
+        {
+            var tradeStream = CreateStreamFromText("GBPUSD,1000"); // Missing price
+            var tradeProcessor = new TradeProcessor();
+
+            var lines = tradeProcessor.ReadTradeData(tradeStream);
+
+            Assert.AreEqual(0, lines.Count());
+        }
+
+        [TestMethod]
+        public void ReadTradeData_WithNegativeLotSize_ReturnsNoLines()
+        {
+            var tradeStream = CreateStreamFromText("GBPUSD,-1000,1.51");
+            var tradeProcessor = new TradeProcessor();
+
+            var lines = tradeProcessor.ReadTradeData(tradeStream);
+
+            Assert.AreEqual(0, lines.Count());
+        }
+
+        // Helper function to create a Stream from a text string.
+        private Stream CreateStreamFromText(string text)
+        {
+            return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(text));
+        }
+    }
+}
+
+[TestMethod()]
         public void TestNormalFile()
         {
             //Arrange

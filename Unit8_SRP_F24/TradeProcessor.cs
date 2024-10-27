@@ -12,7 +12,7 @@ namespace SingleResponsibilityPrinciple
         /// </summary>
         /// <param name="stream"> File must be passed in as a Stream. </param>
         /// <returns> Returns a list of strings, one for each string for each line in the file </returns>
-        private IEnumerable<string> ReadTradeData(Stream stream)
+        public IEnumerable<string> ReadTradeData(Stream stream)
         {
             // read rows
             List<string> lines = new List<string>();
@@ -35,6 +35,33 @@ namespace SingleResponsibilityPrinciple
         /// <returns> true if all the checks pass </returns>
         private bool ValidateTradeData(String[] fields, int currentLine)
         {
+            //if (fields.Length != 3)
+            //{
+            //LogMessage("WARN: Line {0} malformed. Only {1} field(s) found.", currentLine, fields.Length);
+            //return false;
+            //}
+
+            //if (fields[0].Length != 6)
+            //{
+            //LogMessage("WARN: Trade currencies on line {0} malformed: '{1}'", currentLine, fields[0]);
+            //return false;
+            //}
+
+            //int tradeAmount;
+            //if (!int.TryParse(fields[1], out tradeAmount))
+            //{
+            //LogMessage("WARN: Trade amount on line {0} not a valid integer: '{1}'", currentLine, fields[1]);
+            //return false;
+            //}
+
+            //decimal tradePrice;
+            //if (!decimal.TryParse(fields[2], out tradePrice))
+            //{
+            //LogMessage("WARN: Trade price on line {0} not a valid decimal: '{1}'", currentLine, fields[2]);
+            //return false;
+            //}
+            //return true;
+
             if (fields.Length != 3)
             {
                 LogMessage("WARN: Line {0} malformed. Only {1} field(s) found.", currentLine, fields.Length);
@@ -47,19 +74,18 @@ namespace SingleResponsibilityPrinciple
                 return false;
             }
 
-            int tradeAmount;
-            if (!int.TryParse(fields[1], out tradeAmount))
+            if (!int.TryParse(fields[1], out int tradeAmount) || tradeAmount < 0)
             {
-                LogMessage("WARN: Trade amount on line {0} not a valid integer: '{1}'", currentLine, fields[1]);
+                LogMessage("WARN: Trade amount on line {0} not valid or negative: '{1}'", currentLine, fields[1]);
                 return false;
             }
 
-            decimal tradePrice;
-            if (!decimal.TryParse(fields[2], out tradePrice))
+            if (!decimal.TryParse(fields[2], out decimal tradePrice))
             {
                 LogMessage("WARN: Trade price on line {0} not a valid decimal: '{1}'", currentLine, fields[2]);
                 return false;
             }
+
             return true;
         }
 
@@ -172,9 +198,25 @@ namespace SingleResponsibilityPrinciple
         /// <param name="stream"> The text file contianing the trade data </param>
         public void ProcessTrades(Stream stream)
         {
-            var lines = ReadTradeData(stream);
-            var trades = ParseTrades(lines);
-            StoreTrades(trades);
+            //var lines = ReadTradeData(stream);
+            //var trades = ParseTrades(lines);
+            //StoreTrades(trades);
+
+            try
+            {
+                if (stream == null)
+                {
+                    throw new FileNotFoundException("Trade file not found.");
+                }
+
+                var lines = ReadTradeData(stream);
+                var trades = ParseTrades(lines);
+                StoreTrades(trades);
+            }
+            catch (FileNotFoundException ex)
+            {
+                LogMessage("ERROR: " + ex.Message);
+            }
         }
 
     }
